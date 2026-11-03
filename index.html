@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#092b45">
+<meta name="description" content="A simple swim interval timer for pool sessions.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>LaneTimer — Swim Interval Timer</title>
+<style>
+:root{color-scheme:dark;--bg:#071b2b;--panel:#102f46;--panel2:#173b55;--cyan:#65d9e8;--white:#f5fbff;--muted:#a9c1d0;--green:#8be0b2}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b314b,#061725 65%);color:var(--white);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+main{max-width:620px;margin:auto;padding:20px 16px 36px}
+header{text-align:center;padding:8px 0 18px}h1{font-size:26px;margin:0 0 5px;letter-spacing:.3px}header p{margin:0;color:var(--muted);font-size:13px}
+.card{background:rgba(16,47,70,.94);border:1px solid #28516a;border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 12px 30px #0003}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700}
+.setname{font-size:20px;font-weight:750;margin-top:4px}.rep{font-size:14px;color:var(--cyan);font-weight:700}
+.clock{font-variant-numeric:tabular-nums;text-align:center;font-size:clamp(68px,19vw,106px);line-height:1.08;font-weight:800;letter-spacing:-3px;margin:17px 0 8px}
+.status{text-align:center;color:var(--muted);font-size:13px;min-height:20px}
+.progress{height:9px;border-radius:20px;background:#28485e;overflow:hidden;margin:15px 0 7px}.bar{height:100%;width:0;background:linear-gradient(90deg,#43b8d0,#8be0b2);transition:width .2s}
+.progress-label{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+.controls{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:9px;margin-top:17px}
+button{border:0;border-radius:13px;padding:14px 10px;font-weight:800;font-size:14px;background:var(--panel2);color:var(--white);cursor:pointer}
+button:active{transform:scale(.98)}button.primary{background:var(--cyan);color:#062437}button:disabled{opacity:.4;cursor:not-allowed}
+.next{font-size:14px;color:var(--muted);margin-top:13px}.next strong{color:var(--white)}
+h2{font-size:16px;margin:0 0 12px}.item{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid #28516a;font-size:14px}.item:first-of-type{border-top:0}.item.active{color:var(--cyan);font-weight:800}.item.done{color:#89b5a2}.item small{color:var(--muted);font-weight:500}
+.note{font-size:12px;color:var(--muted);line-height:1.5}.footer{text-align:center;color:var(--muted);font-size:11px;margin-top:18px}
+.install{display:none;margin:0 auto 10px;background:#8be0b2;color:#062437;padding:10px 16px;border-radius:999px}
+@media(max-width:380px){main{padding:14px 11px}.card{padding:15px}.controls{gap:6px}button{padding:13px 5px;font-size:13px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <h1>🏊 LaneTimer</h1>
+ <p>Your simple swim interval timer</p>
+</header>
+<button class="install" id="installBtn">＋ Install LaneTimer</button>
+<section class="card">
+ <div class="row"><div><div class="eyebrow">Current set</div><div class="setname" id="setName">Warm-up</div></div><div class="rep" id="rep">Rep 1 / 1</div></div>
+ <div class="clock" id="clock">MANUAL</div>
+ <div class="status" id="status">Swim 400m easy, then tap NEXT</div>
+ <div class="progress"><div class="bar" id="bar"></div></div>
+ <div class="progress-label"><span id="distance">0 / 3,000m</span><span id="percent">0%</span></div>
+ <div class="controls">
+  <button class="primary" id="start">START</button><button id="pause" disabled>PAUSE</button><button id="next">NEXT</button>
+ </div>
+ <div class="next" id="nextInfo">Next: 4 × 50m drill / swim</div>
+</section>
+<section class="card"><h2>Session overview</h2><div id="list"></div></section>
+<section class="card"><h2>About this session</h2>
+ <p class="note">3,000m · Freestyle only. Continuous swims are manual: swim the distance, then tap NEXT. For interval sets, START begins the send-off countdown; the app beeps at zero and advances to the next rep.</p>
+ <p class="note">The send-offs are editable examples, not targets to force. Adjust them to your normal training pace. In a warm pool, keep the effort controlled, drink between sections, and stop if you feel dizzy, nauseous or unusually overheated.</p>
+</section>
+<div class="footer">LaneTimer · Keep your phone somewhere safe and dry on poolside.</div>
+</main>
+<script>
+const blocks = [
+ {name:"Warm-up", reps:1, distance:400, seconds:0, desc:"400m easy freestyle", kind:"manual"},
+ {name:"Warm-up", reps:4, distance:50, seconds:75, desc:"4 × 50m drill / swim · 1:15 send-off"},
+ {name:"Aerobic intervals", reps:4, distance:200, seconds:195, desc:"4 × 200m · 3:15 send-off"},
+ {name:"Main intervals", reps:8, distance:100, seconds:105, desc:"8 × 100m · 1:45 send-off"},
+ {name:"Speed", reps:8, distance:50, seconds:60, desc:"8 × 50m · 1:00 send-off"},
+ {name:"Cooldown", reps:1, distance:400, seconds:0, desc:"400m easy freestyle", kind:"manual"}
+];
+let index=0, rep=1, remaining=0, running=false, deadline=0, tick=null, started=false, finished=false;
+const $=id=>document.getElementById(id);
+const total=blocks.reduce((s,b)=>s+b.reps*b.distance,0);
+function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function current(){return blocks[index]}
+function completedMeters(){let m=0;for(let i=0;i<index;i++)m+=blocks[i].reps*blocks[i].distance;return m+(rep-1)*current().distance}
+function nextLabel(){if(rep<current().reps)return `${current().distance}m · rep ${rep+1}`;if(index<blocks.length-1)return blocks[index+1].desc;return 'Finish session'}
+function render(){
+ const b=current();$('setName').textContent=b.name;$('rep').textContent=`Rep ${rep} / ${b.reps}`;
+ $('clock').textContent=b.kind==='manual'?'MANUAL':fmt(remaining);
+ $('distance').textContent=`${completedMeters().toLocaleString()} / ${total.toLocaleString()}m`;
+ let pct=Math.round(completedMeters()/total*100);$('percent').textContent=pct+'%';$('bar').style.width=pct+'%';
+ $('nextInfo').innerHTML='Next: <strong>'+nextLabel()+'</strong>';
+ $('start').textContent=started?'RESUME':'START';$('pause').disabled=!running;
+ $('start').disabled=finished;
+ $('status').textContent=finished?'Session complete — nice work!':running?'Countdown running':b.kind==='manual'?'Swim this distance, then tap NEXT':started?'Paused':'Ready when you are';
+ $('list').innerHTML=blocks.map((x,i)=>`<div class="item ${i<index?'done':i===index?'active':''}"><span>${x.name}<br><small>${x.desc}</small></span><strong>${x.reps*x.distance}m</strong></div>`).join('');
+}
+function beep(){try{let C=window.AudioContext||window.webkitAudioContext;if(!C)return;let c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.08;o.start();o.stop(c.currentTime+.22)}catch(e){}}
+function stopClock(){running=false;if(tick){clearInterval(tick);tick=null}}
+function advance(){
+ stopClock();
+ if(rep<current().reps){rep++}
+ else if(index<blocks.length-1){index++;rep=1}
+ else{finished=true;remaining=0;render();beep();return}
+ started=false;remaining=current().seconds;render();beep();
+}
+function loop(){
+ if(!running)return;
+ let left=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+ if(left!==remaining){remaining=left;render()}
+ if(left<=0)advance();
+}
+function start(){
+ if(running||finished)return;
+ if(current().kind==='manual'){started=true;render();$('status').textContent='Swim the distance, then tap NEXT';return}
+ started=true;if(remaining<=0)remaining=current().seconds;
+ deadline=Date.now()+remaining*1000;running=true;
+ if(tick)clearInterval(tick);tick=setInterval(loop,150);render();
+}
+function pause(){if(!running)return;remaining=Math.max(0,Math.ceil((deadline-Date.now())/1000));stopClock();render()}
+function next(){if(finished)return;advance()}
+$('start').addEventListener('click',start);$('pause').addEventListener('click',pause);$('next').addEventListener('click',next);
+render();
+
+// Install prompt (available in supported browsers after the site is hosted over HTTPS)
+let installPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').style.display='block'});
+$('installBtn').addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').style.display='none'});
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+ window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+}
+</script>
+</body></html>
